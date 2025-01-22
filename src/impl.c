@@ -21,8 +21,6 @@ POLKAVM_MIN_STACK_SIZE(16 * 4096);
 
 POLKAVM_IMPORT(void, ext_output_video, long, size_t, size_t);
 POLKAVM_IMPORT(void, ext_output_audio, long, size_t);
-POLKAVM_IMPORT(long, ext_rom_size);
-POLKAVM_IMPORT(void, ext_rom_read, long, size_t, size_t);
 POLKAVM_IMPORT(long, ext_stdout, long, size_t);
 
 #endif
@@ -99,11 +97,10 @@ long __syscall2(long n, long a0, long a1) {
 
 #define FD_STDOUT 1
 #define FD_STDERR 2
-#define FD_WAD 3
-#define FD_MIDI 4
+#define FD_MIDI 3
 #define FD_DUMMY 10
 
-static long ROM_SIZE = 0;
+extern long ROM_SIZE;
 static long ROM_OFFSET = 0;
 
 static char * MIDI = 0;
@@ -145,16 +142,7 @@ long __syscall3(long n, long a0, long a1, long a2) {
             fprintf(stderr, "\nsys_open: '%s'\n", filename);
             flush_stdio();
 
-            if (!strcmp(filename, "doom1.wad")) {
-                fprintf(stderr, "sys_open: fetching rom size...\n");
-                flush_stdio();
-
-                ROM_SIZE = ext_rom_size();
-                fprintf(stderr, "sys_open: fetched rom size: %li\n", ROM_SIZE);
-                flush_stdio();
-
-                return FD_WAD;
-            } else if (!strcmp(filename, "/tmp/doom.mid")) {
+            if (!strcmp(filename, "/tmp/doom.mid")) {
                 MIDI_OFFSET = 0;
                 return FD_MIDI;
             } else if (!strcmp(filename, "./.savegame/temp.dsg")) {
@@ -165,12 +153,10 @@ long __syscall3(long n, long a0, long a1, long a2) {
         }
         case SYS_lseek:
         {
+            fprintf(stderr, "sys_lseek\n");
             long * offset = 0;
             long * size = 0;
-            if (a0 == FD_WAD) {
-                offset = &ROM_OFFSET;
-                size = &ROM_SIZE;
-            } else if (a0 == FD_MIDI) {
+            if (a0 == FD_MIDI) {
                 offset = &MIDI_OFFSET;
                 size = &MIDI_SIZE;
             } else if (a0 == FD_DUMMY) {
@@ -204,12 +190,10 @@ long __syscall3(long n, long a0, long a1, long a2) {
         }
         case SYS_readv:
         {
+            fprintf(stderr, "sys_readv\n");
             long * fd_offset = 0;
             long * fd_size = 0;
-            if (a0 == FD_WAD) {
-                fd_offset = &ROM_OFFSET;
-                fd_size = &ROM_SIZE;
-            } else if (a0 == FD_MIDI) {
+            if (a0 == FD_MIDI) {
                 fd_offset = &MIDI_OFFSET;
                 fd_size = &MIDI_SIZE;
             } else if (a0 == FD_DUMMY) {
@@ -233,11 +217,7 @@ long __syscall3(long n, long a0, long a1, long a2) {
                     break;
                 }
 
-                if (a0 == FD_WAD) {
-                    ext_rom_read(iov[i].iov_base, ROM_OFFSET, length);
-                } else {
-                    memcpy(iov[i].iov_base, MIDI + *fd_offset, length);
-                }
+                memcpy(iov[i].iov_base, MIDI + *fd_offset, length);
                 *fd_offset += length;
                 bytes_read += length;
             }

@@ -26,6 +26,12 @@ echo "building for rv${TARGET_BITNESS}"
 
 TARGET_FLAGS="--target=riscv${TARGET_BITNESS}-unknown-none-elf -march=rv${TARGET_BITNESS}emac -mabi=${TARGET_ABI} -nostdlib -nodefaultlibs"
 
+xxd -i roms/doom1.wad > output/doom1_wad.c
+sed -i \
+    -e 's/unsigned char/const unsigned char/' \
+    -e 's/\] = /] __attribute__((aligned(4))) = /' \
+    output/doom1_wad.c
+
 clang $TARGET_FLAGS \
     -Wl,--error-limit=0 \
     -Wl,--emit-relocs \
@@ -38,6 +44,7 @@ clang $TARGET_FLAGS \
     -g3 \
     -O3 \
     -fdebug-prefix-map=$PWD=polkadoom \
+    -Ioutput \
     -Isrc/include \
     -I$SDL_ROOT/include \
     -I$SDL_MIXER_ROOT/include \
@@ -342,9 +349,10 @@ clang $TARGET_FLAGS \
     $DOOM_ROOT/w_main.c \
     $DOOM_ROOT/w_wad.c \
     $DOOM_ROOT/z_zone.c \
-    $DOOM_ROOT/w_file_stdc.c \
+    $DOOM_ROOT/w_file_static.c \
     $DOOM_ROOT/i_input.c \
     $DOOM_ROOT/i_video.c \
     $DOOM_ROOT/doomgeneric.c \
     $DOOM_ROOT/mus2mid.c \
     -o output/doom${1}.elf
+../polkavm/target/debug/polkatool link -s output/doom64.elf -o output/doom64.polkavm
