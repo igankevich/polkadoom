@@ -17,6 +17,8 @@
 
 #include "polkavm_guest.h"
 
+POLKAVM_MIN_STACK_SIZE(16 * 4096);
+
 POLKAVM_IMPORT(void, ext_output_video, long, size_t, size_t);
 POLKAVM_IMPORT(void, ext_output_audio, long, size_t);
 POLKAVM_IMPORT(long, ext_rom_size);

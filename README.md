@@ -1,4 +1,4 @@
-# DOOM port for PolkaVM
+# DOOM port for PolkaVM/CoreVM
 
 This is a DOOM port for [PolkaVM](https://github.com/koute/polkavm).
 

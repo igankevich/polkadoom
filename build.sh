@@ -68,7 +68,7 @@ clang $TARGET_FLAGS \
     -DADLMIDI_DISABLE_JAVA_EMULATOR \
     -DHAVE_MMAP=0 \
     -DHAVE_MREMAP=0 \
-    -Dmalloc_getpagesize=16384 \
+    -Dmalloc_getpagesize=4096 \
     -DMORECORE_CANNOT_TRIM=1 \
     -Dconstinit="" \
     -Wno-implicit-int \
