@@ -100,9 +100,6 @@ long __syscall2(long n, long a0, long a1) {
 #define FD_MIDI 3
 #define FD_DUMMY 10
 
-extern long ROM_SIZE;
-static long ROM_OFFSET = 0;
-
 static char * MIDI = 0;
 static long MIDI_OFFSET = 0;
 static long MIDI_SIZE = 0;
@@ -353,14 +350,22 @@ void doom_get_audio(void * stream, size_t len)
 // EXPORTS
 
 // NOTE: This *must* be static because Doom accesses these args not only during initialization.
-static char * ARGV[3] = {"./doom", "-iwad", "doom1.wad"};
+static char * ARGV[4] = {"./doom", "-iwad", "doom1.wad", "-timedemo"};
 
 void ext_initialize() {
-    doomgeneric_Create(3, ARGV);
+    doomgeneric_Create(4, ARGV);
 }
 
 void ext_tick(void) {
     doomgeneric_Tick();
+}
+
+int main(int argc, char **argv) {
+    doomgeneric_Create(4, ARGV);
+    while (1) {
+        doomgeneric_Tick();
+    }
+    return 0;
 }
 
 static unsigned char _KEYS[256] = {};
