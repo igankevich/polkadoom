@@ -1,2 +1,4 @@
 /output/*.c
-/output/doom64.polkavm
+*.o
+*.elf
+*.polkavm
