@@ -340,7 +340,6 @@ LDFLAGS = $(TARGET_FLAGS) \
 		  -Wl,--emit-relocs \
 		  -Wl,--no-relax
 CFLAGS = $(TARGET_FLAGS) \
-		 $(CPPFLAGS) \
 		 -mrelax \
 		 -fpic \
 		 -fPIE \
