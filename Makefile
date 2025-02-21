@@ -19,8 +19,6 @@ DLMALLOC_ROOT = libs/dlmalloc
 
 outfile_guest = output/doom$(TARGET_BITNESS)-guest.elf
 outfile_guest_polkavm = $(outfile_guest:.elf=.polkavm)
-outfile_builder = output/doom$(TARGET_BITNESS)-builder.elf
-outfile_builder_polkavm = $(outfile_builder:.elf=.polkavm)
 
 sources = src/impl_dummy_libc.c \
 		  src/impl_dummy_sdl.c \
@@ -66,6 +64,8 @@ sources = src/impl_dummy_libc.c \
 		  $(SDL_MIXER_ROOT)/src/codecs/mp3utils.c \
 		  $(SDL_MIXER_ROOT)/src/codecs/music_midi_adl.c \
 		  $(SDL_MIXER_ROOT)/src/utils.c \
+		  libs/miniz/miniz.c \
+		  libs/miniz/miniz_tdef.c \
 		  $(MUSL_ROOT)/src/locale/__lctrans.c \
 		  $(MUSL_ROOT)/src/locale/c_locale.c \
 		  $(MUSL_ROOT)/src/errno/__errno_location.c \
@@ -289,12 +289,9 @@ sources = src/impl_dummy_libc.c \
 		  $(DOOM_ROOT)/mus2mid.c \
 
 sources_guest = src/guest.c $(sources)
-sources_builder = src/builder.c $(sources)
 
 tmp_guest = $(sources_guest:.c=.o)
 objects_guest = $(tmp_guest:.cpp=.o)
-tmp_builder = $(sources_builder:.c=.o)
-objects_builder = $(tmp_builder:.cpp=.o)
 
 CC = clang
 CXX = clang++
@@ -334,7 +331,9 @@ CPPFLAGS = -Ioutput \
 		   -DHAVE_MREMAP=0 \
 		   -Dmalloc_getpagesize=4096 \
 		   -DMORECORE_CANNOT_TRIM=1 \
-		   -Dconstinit=""
+		   -Dconstinit="" \
+		   -Ilibs/miniz \
+		   -DMINIZ_NO_INFLATE_APIS
 LDFLAGS = $(TARGET_FLAGS) \
 		  -Wl,--error-limit=0 \
 		  -Wl,--emit-relocs \
@@ -362,19 +361,13 @@ CXXFLAGS = $(CFLAGS) \
 
 .PHONY: all clean run
 
-all: $(outfile_guest_polkavm) $(outfile_builder_polkavm)
+all: $(outfile_guest_polkavm)
 
 $(outfile_guest_polkavm): $(outfile_guest)
 	polkatool link -s $< -o $@
 
-$(outfile_builder_polkavm): $(outfile_builder)
-	polkatool link -s $< -o $@
-
 $(outfile_guest): $(objects_guest) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
-	$(CC) $(LDFLAGS) $? -o $@
-
-$(outfile_builder): $(objects_builder) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
-	$(CC) $(LDFLAGS) $? -o $@
+	$(CC) $(LDFLAGS) $+ -o $@
 
 output/doom1_wad.c: roms/doom1.wad
 	xxd -i $< >$@
@@ -386,13 +379,4 @@ output/doom1_wad.c: roms/doom1.wad
 clean:
 	find . -name '*.o' -delete
 	rm -f output/*.elf output/*.polkavm
-
-run:
-	cd ../polkajam && cargo run --package doom-builder -- \
-		--builder ../polkadoom/$(outfile_builder_polkavm) \
-		--guest ../polkadoom/$(outfile_guest_polkavm)
-
-run-guest:
-	cd ../polkajam && \
-	env RUST_LOG=debug cargo test --package jam-node --lib -- --nocapture core_vm_doom
 

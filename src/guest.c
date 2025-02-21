@@ -11,10 +11,11 @@
 #include <SDL.h>
 
 #include "polkavm_guest.h"
-#include "core_vm_guest.h"
+//#include "core_vm_guest.h"
 #include "../libs/doomgeneric/doomgeneric/doomgeneric.h"
 #include "../libs/SDL/src/audio/SDL_audio_c.h"
 #include "../libs/SDL/src/audio/SDL_sysaudio.h"
+#include "miniz.h"
 
 POLKAVM_MIN_STACK_SIZE(16 * 4096);
 
@@ -43,10 +44,9 @@ static char * ARGV[4] = {"./doom", "-iwad", "doom1.wad", "-timedemo"};
 
 uint64_t ext_main() {
     doomgeneric_Create(4, ARGV);
-    //doomgeneric_Tick();
-    //while (1) {
-    //    doomgeneric_Tick();
-    //}
+    while (1) {
+        doomgeneric_Tick();
+    }
     return 0;
 }
 
@@ -55,10 +55,6 @@ POLKAVM_EXPORT(uint64_t, ext_main);
 void DG_Init(void) {}
 
 void DG_DrawFrame(void) {
-    copy_out(
-        (uint64_t) DG_ScreenBuffer,
-        (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY)
-    );
 }
 
 int DG_GetKey(int * is_pressed, unsigned char * key) {

@@ -47,6 +47,9 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include <sys/types.h>
 
+#include "miniz.h"
+#include "core_vm_guest.h"
+
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
@@ -265,6 +268,24 @@ void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     memcpy(out, in, SCREENWIDTH * SCREENHEIGHT);
 }
 
+#define MAX_FRAMES 4
+
+void cmap_to_fb_compress(uint8_t* in) {
+    ScreenBufferStream.next_in = in;
+    ScreenBufferStream.avail_in = DOOMGENERIC_RESX * DOOMGENERIC_RESY;
+    if (num_frames_written == MAX_FRAMES - 1) {
+        mz_deflate(&ScreenBufferStream, MZ_FINISH);
+        copy_out((uint64_t) CompressedScreenBuffer, (uint64_t) ScreenBufferStream.total_out);
+        mz_deflateReset(&ScreenBufferStream);
+        ScreenBufferStream.next_out = CompressedScreenBuffer;
+        ScreenBufferStream.avail_out = COMPRESSOR_BUF_LEN;
+        num_frames_written = 0;
+    } else {
+        mz_deflate(&ScreenBufferStream, MZ_NO_FLUSH);
+        num_frames_written++;
+    }
+}
+
 #undef INDEX
 
 void I_InitGraphics (void)
@@ -374,7 +395,8 @@ void I_FinishUpdate (void)
         //cmap_to_fb_downscale(DG_ScreenBuffer, I_VideoBuffer);
         cmap_to_fb_downscale_v3((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
     } else if (fb_scaling == 1 && fb_down_scaling_x == 1 && fb_down_scaling_y == 1) {
-        cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+        //cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+        cmap_to_fb_compress(I_VideoBuffer);
     } else {
         while (y--)
         {
