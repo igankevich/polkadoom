@@ -20,25 +20,10 @@
 POLKAVM_MIN_STACK_SIZE(16 * 4096);
 
 static long ext_stdout(long buffer, size_t length) {
-    // TODO
-    //copy_out(buffer, length);
     return length;
 }
 
 static void ext_output_audio(long buffer, size_t length) {}
-
-/*
-struct KeyPress {
-    int tic;
-    unsigned char key;
-    unsigned char is_pressed;
-}
-
-static const unsigned int MAX_KEY_PRESSES = 32;
-static struct KeyPress key_presses[MAX_KEY_PRESSES];
-static unsigned int key_presses_write_index = 0;
-static unsigned int key_presses_read_index = 0;
-*/
 
 static char * ARGV[4] = {"./doom", "-iwad", "doom1.wad", "-timedemo"};
 
@@ -54,8 +39,7 @@ POLKAVM_EXPORT(uint64_t, ext_main);
 
 void DG_Init(void) {}
 
-void DG_DrawFrame(void) {
-}
+void DG_DrawFrame(void) {}
 
 int DG_GetKey(int * is_pressed, unsigned char * key) {
     return 0;
@@ -83,8 +67,7 @@ Uint32 SDL_GetTicks(void) {
     return SUBSAMPLES;
 }
 
-static SDL_bool AUDIO_Init(SDL_AudioDriverImpl *impl)
-{
+static SDL_bool AUDIO_Init(SDL_AudioDriverImpl *impl) {
     return SDL_FALSE;
 }
 

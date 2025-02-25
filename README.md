@@ -12,7 +12,7 @@ support for audio due to built-in OPL emulation, which doomgeneric doesn't have.
 	- Upstream LLVM from version 18.X and above support those
 	- Scripts to build a toolchain are [available here](https://github.com/paritytech/rustc-rv32e-toolchain) or [here](https://github.com/xermicus/revive/blob/main/build-llvm.sh)
 2. Make sure that the compatible LLVM build is found via `$PATH`. Verify: `clang --target=riscv32 -print-supported-extensions 2>&1 | grep 'RV{32,64}E'`
-3. Run `make -j` to 64bit build.
+3. Run `make -j` to build.
 
 ## License
 

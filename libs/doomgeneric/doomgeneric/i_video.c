@@ -69,7 +69,7 @@ struct FB_ScreenInfo
 	uint32_t yres_virtual;
 
 	uint32_t bits_per_pixel;		/* guess what			*/
-
+	
 							/* >1 = FOURCC			*/
 	struct FB_BitField red;		/* bitfield in s_Fb mem if true color, */
 	struct FB_BitField green;	/* else only length is significant */
@@ -142,7 +142,7 @@ void cmap_to_rgb565(uint16_t * out, uint8_t * in, int in_pixels)
 
     for (i = 0; i < in_pixels; i++)
     {
-        c = colors[*in];
+        c = colors[*in]; 
         r = ((uint16_t)(c.r >> 3)) << 11;
         g = ((uint16_t)(c.g >> 2)) << 5;
         b = ((uint16_t)(c.b >> 3)) << 0;
@@ -189,7 +189,7 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
 
 #define INDEX(i, j) ((i)*SCREENWIDTH + (j))
 
-void cmap_to_fb_downscale(uint32_t* out, uint8_t* in) {
+static void cmap_to_fb_downscale(uint32_t* out, uint8_t* in) {
     int w = s_Fb.xres;
     int h = s_Fb.yres;
     for (int i=0; i<h; ++i) {
@@ -224,7 +224,7 @@ void cmap_to_fb_downscale(uint32_t* out, uint8_t* in) {
     }
 }
 
-void cmap_to_fb_downscale_v2(uint8_t* out, uint8_t* in) {
+static void cmap_to_fb_downscale_v2(uint8_t* out, uint8_t* in) {
     int w = s_Fb.xres;
     int h = s_Fb.yres;
     for (int i=0; i<h; ++i) {
@@ -247,7 +247,7 @@ void cmap_to_fb_downscale_v2(uint8_t* out, uint8_t* in) {
     }
 }
 
-void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
+static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
     int w = s_Fb.xres;
     int h = s_Fb.yres;
     for (int i=0; i<h; ++i) {
@@ -264,13 +264,13 @@ void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
     }
 }
 
-void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
+static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     memcpy(out, in, SCREENWIDTH * SCREENHEIGHT);
 }
 
 #define MAX_FRAMES 4
 
-void cmap_to_fb_compress(uint8_t* in) {
+static void cmap_to_fb_compress(uint8_t* in) {
     ScreenBufferStream.next_in = in;
     ScreenBufferStream.avail_in = DOOMGENERIC_RESX * DOOMGENERIC_RESY;
     if (num_frames_written == MAX_FRAMES - 1) {
@@ -308,7 +308,7 @@ void I_InitGraphics (void)
 	s_Fb.green.offset = 8;
 	s_Fb.red.offset = 16;
 	s_Fb.transp.offset = 24;
-
+	
 
     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
@@ -453,7 +453,7 @@ void I_SetPalette (byte* palette)
 
 	//	palette += 3;
 	//}
-
+    
 
     /* performance boost:
      * map to the right pixel format over here! */
