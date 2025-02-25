@@ -138,13 +138,12 @@ static void ExtendLumpInfo(int newnumlumps)
 
 wad_file_t *W_AddFile (char *filename)
 {
-    wadinfo_t header;
     lumpinfo_t *lump_p;
     unsigned int i;
     wad_file_t *wad_file;
     int length;
     int startlump;
-    filelump_t *fileinfo;
+    filelump_t *fileinfo = NULL;
     filelump_t *filerover;
     int newnumlumps;
 
@@ -178,16 +177,17 @@ wad_file_t *W_AddFile (char *filename)
 
 		M_ExtractFileBase (filename, fileinfo->name);
 		newnumlumps++;
+        filerover = fileinfo;
     }
-    else 
+    else
     {
     	// WAD file
-        W_Read(wad_file, 0, &header, sizeof(header));
+        wadinfo_t* header = (wadinfo_t*)wad_file->mapped;
 
-		if (strncmp(header.identification,"IWAD",4))
+		if (strncmp(header->identification,"IWAD",4))
 		{
 			// Homebrew levels?
-			if (strncmp(header.identification,"PWAD",4))
+			if (strncmp(header->identification,"PWAD",4))
 			{
 			I_Error ("Wad file %s doesn't have IWAD "
 				 "or PWAD id\n", filename);
@@ -196,13 +196,12 @@ wad_file_t *W_AddFile (char *filename)
 			// ???modifiedgame = true;
 		}
 
-		header.numlumps = LONG(header.numlumps);
-		header.infotableofs = LONG(header.infotableofs);
-		length = header.numlumps*sizeof(filelump_t);
-		fileinfo = Z_Malloc(length, PU_STATIC, 0);
+		int numlumps = LONG(header->numlumps);
+		int infotableofs = LONG(header->infotableofs);
+		length = numlumps*sizeof(filelump_t);
+		filerover = (filelump_t*)(wad_file->mapped + infotableofs);
 
-        W_Read(wad_file, header.infotableofs, fileinfo, length);
-        newnumlumps += header.numlumps;
+        newnumlumps += numlumps;
     }
 
     // Increase size of numlumps array to accomodate the new file.
@@ -210,8 +209,6 @@ wad_file_t *W_AddFile (char *filename)
     ExtendLumpInfo(newnumlumps);
 
     lump_p = &lumpinfo[startlump];
-
-    filerover = fileinfo;
 
     for (i=startlump; i<numlumps; ++i)
     {
@@ -225,7 +222,9 @@ wad_file_t *W_AddFile (char *filename)
 			++filerover;
     }
 
-    Z_Free(fileinfo);
+    if (fileinfo != NULL) {
+        Z_Free(fileinfo);
+    }
 
     if (lumphash != NULL)
     {

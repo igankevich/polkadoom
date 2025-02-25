@@ -1,6 +1,8 @@
 uintptr_t __get_tp();
 
-#define TLS_ABOVE_TP
+// We use dummy TLS.
+//#define TLS_ABOVE_TP
+
 #define GAP_ABOVE_TP 0
 
 #define DTP_OFFSET 0x800
