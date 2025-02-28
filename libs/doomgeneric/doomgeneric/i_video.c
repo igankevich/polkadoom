@@ -49,9 +49,11 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "miniz.h"
 #include "core_vm_guest.h"
+#include "stb_image_write.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
+#define PALETTE_PNG_LEN (256*3)
 
 //#define CMAP256
 
@@ -91,6 +93,9 @@ struct color {
 };
 
 static struct color colors[256];
+
+// r1 g1 b1 r2 g2 b2 ...
+static uint8_t palette_png[PALETTE_PNG_LEN];
 
 void I_GetEvent(void);
 
@@ -266,6 +271,11 @@ static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
 
 static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     memcpy(out, in, SCREENWIDTH * SCREENHEIGHT);
+    copy_out((uint64_t) out, (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY));
+}
+
+static void copy_out_cmap(uint8_t* in) {
+    copy_out((uint64_t) in, (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY));
 }
 
 #define MAX_FRAMES 4
@@ -287,6 +297,24 @@ static void cmap_to_fb_compress(uint8_t* in) {
 }
 
 #undef INDEX
+
+static void copy_to_host(void* context, void* data, int size) {
+    copy_out((uint64_t) data, (uint64_t) size);
+}
+
+static void cmap_to_png(uint8_t* colormap) {
+    stbi_write_png_to_func(
+        copy_to_host,
+        NULL,
+        DOOMGENERIC_RESX,
+        DOOMGENERIC_RESY,
+        1,
+        colormap,
+        0,
+        palette_png,
+        PALETTE_PNG_LEN
+    );
+}
 
 void I_InitGraphics (void)
 {
@@ -396,7 +424,8 @@ void I_FinishUpdate (void)
         cmap_to_fb_downscale_v3((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
     } else if (fb_scaling == 1 && fb_down_scaling_x == 1 && fb_down_scaling_y == 1) {
         //cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
-        cmap_to_fb_compress(I_VideoBuffer);
+        //cmap_to_fb_compress(I_VideoBuffer);
+        cmap_to_png(I_VideoBuffer);
     } else {
         while (y--)
         {
@@ -440,38 +469,20 @@ void I_ReadScreen (byte* scr)
 
 void I_SetPalette (byte* palette)
 {
-	int i;
-	//col_t* c;
-
-	//for (i = 0; i < 256; i++)
-	//{
-	//	c = (col_t*)palette;
-
-	//	rgb565_palette[i] = GFX_RGB565(gammatable[usegamma][c->r],
-	//								   gammatable[usegamma][c->g],
-	//								   gammatable[usegamma][c->b]);
-
-	//	palette += 3;
-	//}
-    
-
-    /* performance boost:
-     * map to the right pixel format over here! */
-
-    for (i=0; i<256; ++i ) {
-        colors[i].a = 0;
-        colors[i].r = gammatable[usegamma][*palette++];
-        colors[i].g = gammatable[usegamma][*palette++];
-        colors[i].b = gammatable[usegamma][*palette++];
-    }
-    //printf("const PALETTE: [u32; 256] = {\n");
-    //for (int i=0; i<256; ++i) {
-    //    printf("0x%08x, ", color_to_pixel(colors[i]));
-    //    if (i % 10 == 0) {
-    //        printf("\n");
-    //    }
+    //for (i=0; i<256; ++i ) {
+    //    colors[i].a = 0;
+    //    colors[i].r = gammatable[usegamma][*palette++];
+    //    colors[i].g = gammatable[usegamma][*palette++];
+    //    colors[i].b = gammatable[usegamma][*palette++];
     //}
-    //printf("\n};\n");
+    for (int i=0; i<256; ++i) {
+        uint8_t red = gammatable[usegamma][*palette++];
+        uint8_t green = gammatable[usegamma][*palette++];
+        uint8_t blue = gammatable[usegamma][*palette++];
+        palette_png[3*i + 0] = red;
+        palette_png[3*i + 1] = green;
+        palette_png[3*i + 2] = blue;
+    }
 }
 
 // Given an RGB value, find the closest matching palette index.

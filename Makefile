@@ -22,6 +22,7 @@ outfile_guest_polkavm = $(outfile_guest:.elf=.polkavm)
 
 sources = src/impl_dummy_libc.c \
 		  src/impl_dummy_sdl.c \
+		  src/stb_impl.c \
 		  $(DLMALLOC_ROOT)/malloc.c \
 		  $(LIBCXX_ROOT)/src/new.cpp \
 		  $(LIBCXX_ROOT)/src/new_helpers.cpp \
@@ -333,7 +334,9 @@ CPPFLAGS = -Ioutput \
 		   -DMORECORE_CANNOT_TRIM=1 \
 		   -Dconstinit="" \
 		   -Ilibs/miniz \
-		   -DMINIZ_NO_INFLATE_APIS
+		   -DMINIZ_NO_INFLATE_APIS \
+		   -Ilibs/stb \
+		   -DSTBI_WRITE_NO_STDIO
 LDFLAGS = $(TARGET_FLAGS) \
 		  -Wl,--error-limit=0 \
 		  -Wl,--emit-relocs \
