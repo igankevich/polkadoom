@@ -21,7 +21,7 @@ void doomgeneric_Create(int argc, char **argv)
 
 	M_FindResponseFile();
 
-    const int n = DOOMGENERIC_RESX * DOOMGENERIC_RESY;
+    const int n = PALETTE_PNG_LEN + DOOMGENERIC_RESX * DOOMGENERIC_RESY;
 	DG_ScreenBuffer = malloc(n);
 	CompressedScreenBuffer = malloc(COMPRESSOR_BUF_LEN);
 

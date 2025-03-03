@@ -53,7 +53,6 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
-#define PALETTE_PNG_LEN (256*3)
 
 //#define CMAP256
 
@@ -270,8 +269,11 @@ static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
 }
 
 static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
-    memcpy(out, in, SCREENWIDTH * SCREENHEIGHT);
-    copy_out((uint64_t) out, (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY));
+    // Copy the palette.
+    memcpy(out, palette_png, PALETTE_PNG_LEN);
+    // Copy the frame.
+    memcpy(out + PALETTE_PNG_LEN, in, FRAME_LEN);
+    copy_out((uint64_t) out, (uint64_t) PAYLOAD_LEN);
 }
 
 static void copy_out_cmap(uint8_t* in) {
@@ -423,9 +425,10 @@ void I_FinishUpdate (void)
         //cmap_to_fb_downscale(DG_ScreenBuffer, I_VideoBuffer);
         cmap_to_fb_downscale_v3((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
     } else if (fb_scaling == 1 && fb_down_scaling_x == 1 && fb_down_scaling_y == 1) {
-        //cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+        cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
         //cmap_to_fb_compress(I_VideoBuffer);
-        cmap_to_png(I_VideoBuffer);
+        //cmap_to_png(I_VideoBuffer);
+        //copy_out_cmap(I_VideoBuffer);
     } else {
         while (y--)
         {
