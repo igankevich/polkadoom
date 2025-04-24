@@ -11,7 +11,7 @@
 #include <SDL.h>
 
 #include "polkavm_guest.h"
-//#include "core_vm_guest.h"
+#include "corevm_guest.h"
 #include "../libs/doomgeneric/doomgeneric/doomgeneric.h"
 #include "../libs/SDL/src/audio/SDL_audio_c.h"
 #include "../libs/SDL/src/audio/SDL_sysaudio.h"
@@ -28,6 +28,13 @@ static void ext_output_audio(long buffer, size_t length) {}
 static char * ARGV[4] = {"./doom", "-iwad", "doom1.wad", "-timedemo"};
 
 uint64_t ext_main() {
+    struct CoreVmVideoMode video_mode = {
+        .width = DOOMGENERIC_RESX,
+        .height = DOOMGENERIC_RESY,
+        .refresh_rate = 30,
+        .format = COREVM_VIDEO_RGB88_INDEXED8,
+    };
+    corevm_video_mode(&video_mode);
     doomgeneric_Create(4, ARGV);
     while (1) {
         doomgeneric_Tick();
