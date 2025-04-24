@@ -372,6 +372,9 @@ $(outfile_guest_polkavm): $(outfile_guest)
 $(outfile_guest): $(objects_guest) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
 	$(CC) $(LDFLAGS) $+ -o $@
 
+libs/doomgeneric/doomgeneric/i_video.o: src/corevm_guest.h src/polkavm_guest.h
+src/guest.o: src/corevm_guest.h src/polkavm_guest.h
+
 output/doom1_wad.c: roms/doom1.wad
 	xxd -i $< >$@
 	sed -i \

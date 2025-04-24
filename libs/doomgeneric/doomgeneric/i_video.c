@@ -48,12 +48,11 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include <sys/types.h>
 
 #include "miniz.h"
-#include "core_vm_guest.h"
+#include "corevm_guest.h"
 #include "stb_image_write.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
-#define PALETTE_PNG_LEN (256*3)
 
 //#define CMAP256
 
@@ -269,13 +268,28 @@ static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
     }
 }
 
+static uint64_t frame_number = 0;
+
 static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
-    memcpy(out, in, SCREENWIDTH * SCREENHEIGHT);
-    copy_out((uint64_t) out, (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY));
+    uint8_t* ptr = out;
+    // Copy the palette flag.
+    *ptr++ = 1;
+    // Copy the palette.
+    memcpy(ptr, palette_png, PALETTE_PNG_LEN);
+    ptr += PALETTE_PNG_LEN;
+    // Copy the frame.
+    memcpy(ptr, in, FRAME_LEN);
+    corevm_yield_video_frame(frame_number, (uint64_t) out, (uint64_t) PAYLOAD_LEN);
+    ++frame_number;
 }
 
 static void copy_out_cmap(uint8_t* in) {
-    copy_out((uint64_t) in, (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY));
+    corevm_yield_video_frame(
+        frame_number,
+        (uint64_t) in,
+        (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY)
+    );
+    ++frame_number;
 }
 
 #define MAX_FRAMES 4
@@ -285,7 +299,12 @@ static void cmap_to_fb_compress(uint8_t* in) {
     ScreenBufferStream.avail_in = DOOMGENERIC_RESX * DOOMGENERIC_RESY;
     if (num_frames_written == MAX_FRAMES - 1) {
         mz_deflate(&ScreenBufferStream, MZ_FINISH);
-        copy_out((uint64_t) CompressedScreenBuffer, (uint64_t) ScreenBufferStream.total_out);
+        corevm_yield_video_frame(
+            frame_number,
+            (uint64_t) CompressedScreenBuffer,
+            (uint64_t) ScreenBufferStream.total_out
+        );
+        ++frame_number;
         mz_deflateReset(&ScreenBufferStream);
         ScreenBufferStream.next_out = CompressedScreenBuffer;
         ScreenBufferStream.avail_out = COMPRESSOR_BUF_LEN;
@@ -299,7 +318,8 @@ static void cmap_to_fb_compress(uint8_t* in) {
 #undef INDEX
 
 static void copy_to_host(void* context, void* data, int size) {
-    copy_out((uint64_t) data, (uint64_t) size);
+    corevm_yield_video_frame(frame_number, (uint64_t) data, (uint64_t) size);
+    ++frame_number;
 }
 
 static void cmap_to_png(uint8_t* colormap) {
@@ -423,9 +443,10 @@ void I_FinishUpdate (void)
         //cmap_to_fb_downscale(DG_ScreenBuffer, I_VideoBuffer);
         cmap_to_fb_downscale_v3((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
     } else if (fb_scaling == 1 && fb_down_scaling_x == 1 && fb_down_scaling_y == 1) {
-        //cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+        cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
         //cmap_to_fb_compress(I_VideoBuffer);
-        cmap_to_png(I_VideoBuffer);
+        //cmap_to_png(I_VideoBuffer);
+        //copy_out_cmap(I_VideoBuffer);
     } else {
         while (y--)
         {
