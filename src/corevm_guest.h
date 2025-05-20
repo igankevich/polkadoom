@@ -48,7 +48,7 @@ POLKAVM_IMPORT_V2(0, uint64_t, corevm_gas);
 POLKAVM_IMPORT_V2(1, uint64_t, corevm_alloc, uint64_t);
 POLKAVM_IMPORT_V2(2, void, corevm_free, uint64_t, uint64_t);
 POLKAVM_IMPORT_V2(3, uint64_t, corevm_yield_console_data, uint64_t, uint64_t, uint64_t);
-POLKAVM_IMPORT_V2(4, uint64_t, corevm_yield_video_frame_impl, uint64_t, uint64_t, uint64_t);
+POLKAVM_IMPORT_V2(4, uint64_t, corevm_yield_video_frame_impl, uint64_t, uint64_t);
 POLKAVM_IMPORT_V2(5, void, corevm_video_mode_impl, uint64_t, uint64_t, uint64_t, uint64_t);
 
 #ifndef COREVM_PRINTF_BUFFER_LEN
@@ -76,16 +76,16 @@ POLKAVM_IMPORT_V2(5, void, corevm_video_mode_impl, uint64_t, uint64_t, uint64_t,
 #define corevm_printf(format, ...) corevm_printf_impl(1, format, ##__VA_ARGS__)
 #define corevm_eprintf(format, ...) corevm_printf_impl(2, format, ##__VA_ARGS__)
 
-inline static void corevm_yield_video_frame(size_t frame_number, const void* frame, size_t frame_len) {
+inline static void corevm_yield_video_frame(const void* frame, size_t frame_len) {
     while (1) {
-        uint64_t ret = corevm_yield_video_frame_impl((uint64_t) frame_number, (uint64_t) frame, (uint64_t) frame_len);
+        uint64_t ret = corevm_yield_video_frame_impl((uint64_t) frame, (uint64_t) frame_len);
         if (ret == 0) {
             break;
         }
     }
 }
 
-enum CorevmVideoFrameFormat {
+enum CoreVmVideoFrameFormat {
     COREVM_VIDEO_RGB88_INDEXED8 = 1
 };
 
@@ -93,7 +93,7 @@ struct CoreVmVideoMode {
     uint32_t width;
     uint32_t height;
     uint16_t refresh_rate;
-    enum CorevmVideoFrameFormat format;
+    enum CoreVmVideoFrameFormat format;
 };
 
 inline static void corevm_video_mode(const struct CoreVmVideoMode* mode) {

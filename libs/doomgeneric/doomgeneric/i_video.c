@@ -268,8 +268,6 @@ static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
     }
 }
 
-static uint64_t frame_number = 0;
-
 static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     uint8_t* ptr = out;
     // Copy the palette flag.
@@ -279,17 +277,14 @@ static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     ptr += PALETTE_PNG_LEN;
     // Copy the frame.
     memcpy(ptr, in, FRAME_LEN);
-    corevm_yield_video_frame(frame_number, (uint64_t) out, (uint64_t) PAYLOAD_LEN);
-    ++frame_number;
+    corevm_yield_video_frame((uint64_t) out, (uint64_t) PAYLOAD_LEN);
 }
 
 static void copy_out_cmap(uint8_t* in) {
     corevm_yield_video_frame(
-        frame_number,
         (uint64_t) in,
         (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY)
     );
-    ++frame_number;
 }
 
 #define MAX_FRAMES 4
@@ -300,11 +295,9 @@ static void cmap_to_fb_compress(uint8_t* in) {
     if (num_frames_written == MAX_FRAMES - 1) {
         mz_deflate(&ScreenBufferStream, MZ_FINISH);
         corevm_yield_video_frame(
-            frame_number,
             (uint64_t) CompressedScreenBuffer,
             (uint64_t) ScreenBufferStream.total_out
         );
-        ++frame_number;
         mz_deflateReset(&ScreenBufferStream);
         ScreenBufferStream.next_out = CompressedScreenBuffer;
         ScreenBufferStream.avail_out = COMPRESSOR_BUF_LEN;
@@ -318,8 +311,7 @@ static void cmap_to_fb_compress(uint8_t* in) {
 #undef INDEX
 
 static void copy_to_host(void* context, void* data, int size) {
-    corevm_yield_video_frame(frame_number, (uint64_t) data, (uint64_t) size);
-    ++frame_number;
+    corevm_yield_video_frame((uint64_t) data, (uint64_t) size);
 }
 
 static void cmap_to_png(uint8_t* colormap) {
