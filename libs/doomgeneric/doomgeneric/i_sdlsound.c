@@ -866,6 +866,7 @@ static int I_SDL_StartSound(sfxinfo_t *sfxinfo, int channel, int vol, int sep)
 
     // play sound
 
+    //printf("Play %u bytes, channel = %d\n", snd->chunk.alen, channel);
     Mix_PlayChannelTimed(channel, &snd->chunk, 0, -1);
 
     channels_playing[channel] = sfxinfo;
@@ -884,6 +885,7 @@ static void I_SDL_StopSound(int handle)
         return;
     }
 
+    //printf("Stop channel = %d\n", handle);
     Mix_HaltChannel(handle);
 
     // Sound data is no longer needed; release the

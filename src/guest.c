@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -21,22 +23,23 @@
 POLKAVM_MIN_STACK_SIZE(16 * 4096);
 
 static long ext_stdout(long buffer, size_t length) {
-    corevm_yield_console_data(1, buffer, length);
+    corevm_yield_console_data(COREVM_STDOUT, buffer, length);
     return length;
 }
 
 static char * ARGV[4] = {"./doom", "-iwad", "doom1.wad", "-timedemo"};
 
+// Original frame rate is 35
 #define FRAMES_PER_SEC TICRATE
 
-#define SAMPLE_RATE 44100
-#define CHANNELS 2
+#define SAMPLE_RATE (44100/2)
+#define CHANNELS 1
 
 #define DIV_CEIL(x, y) (((x) + ((y) - 1)) / (y))
 #define MAX_SAMPLES_PER_FRAME DIV_CEIL(SAMPLE_RATE, FRAMES_PER_SEC)
 #define AUDIO_BUFFER_LEN (MAX_SAMPLES_PER_FRAME * sizeof(int16_t) * CHANNELS)
 
-uint64_t _pvm_start() {
+int main() {
     struct CoreVmVideoMode video_mode = {
         .width = DOOMGENERIC_RESX,
         .height = DOOMGENERIC_RESY,
@@ -44,12 +47,14 @@ uint64_t _pvm_start() {
         .format = COREVM_VIDEO_RGB88_INDEXED8,
     };
     corevm_video_mode(&video_mode);
+    #if !defined(DOOM_NO_AUDIO)
     struct CoreVmAudioMode audio_mode = {
         .sample_rate = SAMPLE_RATE,
         .channels = CHANNELS,
         .sample_format = COREVM_AUDIO_S16LE,
     };
     corevm_audio_mode(&audio_mode);
+    #endif
     doomgeneric_Create(4, ARGV);
     while (1) {
         doomgeneric_Tick();
@@ -57,7 +62,7 @@ uint64_t _pvm_start() {
     return 0;
 }
 
-POLKAVM_EXPORT(uint64_t, _pvm_start);
+POLKAVM_EXPORT(int, main);
 
 static void flush_stdio() {
     fflush(stdout);
@@ -394,13 +399,12 @@ static char audio_buffer[AUDIO_BUFFER_LEN];
 static void pump_audio();
 
 void DG_DrawFrame(void) {
+    #if !defined(DOOM_NO_AUDIO)
     pump_audio();
+    #endif
     ++frame_number;
     timestamp = frame_number * 1000000000UL / FRAMES_PER_SEC;
 }
-
-#pragma GCC push_options
-#pragma GCC optimize ("O3")
 
 static void pump_audio() {
     size_t start_sample = frame_number * SAMPLE_RATE / FRAMES_PER_SEC;
@@ -425,8 +429,6 @@ void SDL_Delay(Uint32 ms) {
 Uint32 SDL_GetTicks(void) {
     return DG_GetTicksMs();
 }
-
-#pragma GCC pop_options
 
 int DG_GetKey(int * is_pressed, unsigned char * key) {
     return 0;
