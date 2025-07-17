@@ -17,8 +17,10 @@ ADLMIDI_ROOT = libs/libADLMIDI
 LIBCXX_ROOT = libs/libcxx
 DLMALLOC_ROOT = libs/dlmalloc
 
-outfile_guest = output/doom$(TARGET_BITNESS)-guest.elf
-outfile_guest_polkavm = $(outfile_guest:.elf=.polkavm)
+include output/config.mk
+
+outfile_guest = output/doom$(DOOM_SUFFIX).elf
+outfile_guest_corevm = $(outfile_guest:.elf=.corevm)
 
 sources = src/impl_dummy_libc.c \
 		  src/impl_dummy_sdl.c \
@@ -364,16 +366,16 @@ CXXFLAGS = $(CFLAGS) \
 
 .PHONY: all clean run
 
-all: $(outfile_guest_polkavm)
+all: $(outfile_guest_corevm)
 
-$(outfile_guest_polkavm): $(outfile_guest)
+$(outfile_guest_corevm): $(outfile_guest)
 	polkatool link -s $< -o $@
 
 $(outfile_guest): $(objects_guest) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
 	$(CC) $(LDFLAGS) $+ -o $@
 
 libs/doomgeneric/doomgeneric/i_video.o: src/corevm_guest.h src/polkavm_guest.h
-src/guest.o: src/corevm_guest.h src/polkavm_guest.h
+src/guest.o: src/corevm_guest.h src/polkavm_guest.h output/config.h
 
 output/doom1_wad.c: roms/doom1.wad
 	xxd -i $< >$@
