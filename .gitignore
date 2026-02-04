@@ -1,0 +1,4 @@
+/output/*.c
+*.o
+*.elf
+*.polkavm

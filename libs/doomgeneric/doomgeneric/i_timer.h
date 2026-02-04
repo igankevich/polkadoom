@@ -20,7 +20,7 @@
 #ifndef __I_TIMER__
 #define __I_TIMER__
 
-#define TICRATE 35
+#define TICRATE 24
 
 // Called by D_DoomLoop,
 // returns current time in tics.

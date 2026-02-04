@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -47,6 +47,13 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include <sys/types.h>
 
+#include "miniz.h"
+#include "corevm_guest.h"
+#include "stb_image_write.h"
+
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+#define MAX(a,b) ((a)>(b)?(a):(b))
+
 //#define CMAP256
 
 struct FB_BitField
@@ -72,7 +79,9 @@ struct FB_ScreenInfo
 };
 
 static struct FB_ScreenInfo s_Fb;
-int fb_scaling = 1;
+int fb_scaling = 1; // numerator
+int fb_down_scaling_x = 1; // denominator
+int fb_down_scaling_y = 1; // denominator
 int usemouse = 0;
 
 struct color {
@@ -83,6 +92,9 @@ struct color {
 };
 
 static struct color colors[256];
+
+// r1 g1 b1 r2 g2 b2 ...
+static uint8_t palette_png[PALETTE_PNG_LEN];
 
 void I_GetEvent(void);
 
@@ -147,6 +159,16 @@ void cmap_to_rgb565(uint16_t * out, uint8_t * in, int in_pixels)
     }
 }
 
+uint32_t color_to_pixel(struct color c) {
+    uint16_t r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
+    uint16_t g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
+    uint16_t b = (uint16_t)(c.b >> (8 - s_Fb.blue.length));
+    uint32_t pix = r << s_Fb.red.offset;
+    pix |= g << s_Fb.green.offset;
+    pix |= b << s_Fb.blue.offset;
+    return pix;
+}
+
 void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
 {
     int i, j, k;
@@ -157,12 +179,7 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
     for (i = 0; i < in_pixels; i++)
     {
         c = colors[*in];  /* R:8 G:8 B:8 format! */
-        r = (uint16_t)(c.r >> (8 - s_Fb.red.length));
-        g = (uint16_t)(c.g >> (8 - s_Fb.green.length));
-        b = (uint16_t)(c.b >> (8 - s_Fb.blue.length));
-        pix = r << s_Fb.red.offset;
-        pix |= g << s_Fb.green.offset;
-        pix |= b << s_Fb.blue.offset;
+        pix = color_to_pixel(c);
 
         for (k = 0; k < fb_scaling; k++) {
             for (j = 0; j < s_Fb.bits_per_pixel/8; j++) {
@@ -172,6 +189,143 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
         }
         in++;
     }
+}
+
+#define INDEX(i, j) ((i)*SCREENWIDTH + (j))
+
+static void cmap_to_fb_downscale(uint32_t* out, uint8_t* in) {
+    int w = s_Fb.xres;
+    int h = s_Fb.yres;
+    for (int i=0; i<h; ++i) {
+        for (int j=0; j<w; ++j) {
+            int in_i = i * fb_down_scaling_y;
+            int in_j = j * fb_down_scaling_x;
+            int in_i1 = MIN(SCREENHEIGHT, in_i + fb_down_scaling_y);
+            int in_j1 = MIN(SCREENWIDTH, in_j + fb_down_scaling_x);
+            uint32_t r = 0;
+            uint32_t g = 0;
+            uint32_t b = 0;
+            uint32_t a = 0;
+            uint32_t n = 0;
+            for (int y=in_i; y<in_i1; ++y) {
+                for (int x=in_j; x<in_j1; ++x) {
+                    struct color c2 = colors[in[INDEX(y, x)]];
+                    b += c2.b;
+                    g += c2.g;
+                    r += c2.r;
+                    a += c2.a;
+                    ++n;
+                }
+            }
+            struct color c = {
+                .b = b / n,
+                .g = g / n,
+                .r = r / n,
+                .a = a / n,
+            };
+            out[i*w + j] = color_to_pixel(c);
+        }
+    }
+}
+
+static void cmap_to_fb_downscale_v2(uint8_t* out, uint8_t* in) {
+    int w = s_Fb.xres;
+    int h = s_Fb.yres;
+    for (int i=0; i<h; ++i) {
+        for (int j=0; j<w; ++j) {
+            int in_i = i * fb_down_scaling_y;
+            int in_j = j * fb_down_scaling_x;
+            int in_i1 = MIN(SCREENHEIGHT, in_i + fb_down_scaling_y);
+            int in_j1 = MIN(SCREENWIDTH, in_j + fb_down_scaling_x);
+            uint32_t sum = 0;
+            uint32_t n = 0;
+            for (int y=in_i; y<in_i1; ++y) {
+                for (int x=in_j; x<in_j1; ++x) {
+                    sum += in[INDEX(y, x)];
+                    ++n;
+                }
+            }
+            uint8_t index = (uint8_t)(sum / n);
+            out[i*w + j] = index;
+        }
+    }
+}
+
+static void cmap_to_fb_downscale_v3(uint8_t* out, uint8_t* in) {
+    int w = s_Fb.xres;
+    int h = s_Fb.yres;
+    for (int i=0; i<h; ++i) {
+        for (int j=0; j<w; ++j) {
+            int in_i = i * fb_down_scaling_y;
+            int in_j = j * fb_down_scaling_x;
+            int in_i1 = MIN(SCREENHEIGHT, in_i + fb_down_scaling_y);
+            int in_j1 = MIN(SCREENWIDTH, in_j + fb_down_scaling_x);
+            uint32_t sum = in[INDEX(in_i, in_j)];
+            uint32_t n = 1;
+            uint8_t index = (uint8_t)(sum / n);
+            out[i*w + j] = index;
+        }
+    }
+}
+
+static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
+    uint8_t* ptr = out;
+    // Copy the palette flag.
+    *ptr++ = 1;
+    // Copy the palette.
+    memcpy(ptr, palette_png, PALETTE_PNG_LEN);
+    ptr += PALETTE_PNG_LEN;
+    // Copy the frame.
+    memcpy(ptr, in, FRAME_LEN);
+    corevm_yield_video_frame((uint64_t) out, (uint64_t) PAYLOAD_LEN);
+}
+
+static void copy_out_cmap(uint8_t* in) {
+    corevm_yield_video_frame(
+        (uint64_t) in,
+        (uint64_t) (DOOMGENERIC_RESX * DOOMGENERIC_RESY)
+    );
+}
+
+#define MAX_FRAMES 4
+
+static void cmap_to_fb_compress(uint8_t* in) {
+    ScreenBufferStream.next_in = in;
+    ScreenBufferStream.avail_in = DOOMGENERIC_RESX * DOOMGENERIC_RESY;
+    if (num_frames_written == MAX_FRAMES - 1) {
+        mz_deflate(&ScreenBufferStream, MZ_FINISH);
+        corevm_yield_video_frame(
+            (uint64_t) CompressedScreenBuffer,
+            (uint64_t) ScreenBufferStream.total_out
+        );
+        mz_deflateReset(&ScreenBufferStream);
+        ScreenBufferStream.next_out = CompressedScreenBuffer;
+        ScreenBufferStream.avail_out = COMPRESSOR_BUF_LEN;
+        num_frames_written = 0;
+    } else {
+        mz_deflate(&ScreenBufferStream, MZ_NO_FLUSH);
+        num_frames_written++;
+    }
+}
+
+#undef INDEX
+
+static void copy_to_host(void* context, void* data, int size) {
+    corevm_yield_video_frame((uint64_t) data, (uint64_t) size);
+}
+
+static void cmap_to_png(uint8_t* colormap) {
+    stbi_write_png_to_func(
+        copy_to_host,
+        NULL,
+        DOOMGENERIC_RESX,
+        DOOMGENERIC_RESY,
+        1,
+        colormap,
+        0,
+        palette_png,
+        PALETTE_PNG_LEN
+    );
 }
 
 void I_InitGraphics (void)
@@ -211,10 +365,16 @@ void I_InitGraphics (void)
         fb_scaling = i;
         printf("I_InitGraphics: Scaling factor: %d\n", fb_scaling);
     } else {
-        fb_scaling = s_Fb.xres / SCREENWIDTH;
-        if (s_Fb.yres / SCREENHEIGHT < fb_scaling)
-            fb_scaling = s_Fb.yres / SCREENHEIGHT;
-        printf("I_InitGraphics: Auto-scaling factor: %d\n", fb_scaling);
+        fb_down_scaling_x = MAX(1, SCREENWIDTH / s_Fb.xres);
+        fb_down_scaling_y = MAX(1, SCREENHEIGHT / s_Fb.yres);
+        fb_scaling = MAX(1, MIN(s_Fb.xres / SCREENWIDTH, s_Fb.yres / SCREENHEIGHT));
+        printf(
+            "I_InitGraphics: Auto-scaling ratio: x = %d / %d, y = %d / %d\n",
+            fb_scaling,
+            fb_down_scaling_x,
+            fb_scaling,
+            fb_down_scaling_y
+        );
     }
 
 
@@ -260,10 +420,10 @@ void I_FinishUpdate (void)
     /* 600 = s_Fb heigt, 200 screenheight */
     /* 600 = s_Fb heigt, 200 screenheight */
     /* 2048 =s_Fb width, 320 screenwidth */
-    y_offset     = (((s_Fb.yres - (SCREENHEIGHT * fb_scaling)) * s_Fb.bits_per_pixel/8)) / 2;
-    x_offset     = (((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
+    y_offset     = (((s_Fb.yres - (SCREENHEIGHT * fb_scaling / fb_down_scaling_y)) * s_Fb.bits_per_pixel/8)) / 2;
+    x_offset     = (((s_Fb.xres - (SCREENWIDTH  * fb_scaling / fb_down_scaling_x)) * s_Fb.bits_per_pixel/8)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
     //x_offset     = 0;
-    x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8) - x_offset;
+    x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling / fb_down_scaling_x)) * s_Fb.bits_per_pixel/8) - x_offset;
 
     /* DRAW SCREEN */
     line_in  = (unsigned char *) I_VideoBuffer;
@@ -271,24 +431,34 @@ void I_FinishUpdate (void)
 
     y = SCREENHEIGHT;
 
-    while (y--)
-    {
-        int i;
-        for (i = 0; i < fb_scaling; i++) {
-            line_out += x_offset;
-#ifdef CMAP256
-            for (fb_scaling == 1) {
-                memcpy(line_out, line_in, SCREENWIDTH); /* fb_width is bigger than Doom SCREENWIDTH... */
-            } else {
-                //XXX FIXME fb_scaling support!
+    if (fb_scaling == 1 && (fb_down_scaling_x > 1 || fb_down_scaling_y > 1)) {
+        //cmap_to_fb_downscale(DG_ScreenBuffer, I_VideoBuffer);
+        cmap_to_fb_downscale_v3((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+    } else if (fb_scaling == 1 && fb_down_scaling_x == 1 && fb_down_scaling_y == 1) {
+        cmap_to_fb_copy((uint8_t*)DG_ScreenBuffer, I_VideoBuffer);
+        //cmap_to_fb_compress(I_VideoBuffer);
+        //cmap_to_png(I_VideoBuffer);
+        //copy_out_cmap(I_VideoBuffer);
+    } else {
+        while (y--)
+        {
+            int i;
+            for (i = 0; i < fb_scaling; i++) {
+                line_out += x_offset;
+                #ifdef CMAP256
+                for (fb_scaling == 1) {
+                    memcpy(line_out, line_in, SCREENWIDTH); /* fb_width is bigger than Doom SCREENWIDTH... */
+                } else {
+                    //XXX FIXME fb_scaling support!
+                }
+                #else
+                //cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
+                cmap_to_fb((void*)line_out, (void*)line_in, SCREENWIDTH);
+                #endif
+                line_out += (SCREENWIDTH * fb_scaling * (s_Fb.bits_per_pixel/8)) + x_offset_end;
             }
-#else
-            //cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
-            cmap_to_fb((void*)line_out, (void*)line_in, SCREENWIDTH);
-#endif
-            line_out += (SCREENWIDTH * fb_scaling * (s_Fb.bits_per_pixel/8)) + x_offset_end;
+            line_in += SCREENWIDTH;
         }
-        line_in += SCREENWIDTH;
     }
 
 	DG_DrawFrame();
@@ -312,29 +482,19 @@ void I_ReadScreen (byte* scr)
 
 void I_SetPalette (byte* palette)
 {
-	int i;
-	//col_t* c;
-
-	//for (i = 0; i < 256; i++)
-	//{
-	//	c = (col_t*)palette;
-
-	//	rgb565_palette[i] = GFX_RGB565(gammatable[usegamma][c->r],
-	//								   gammatable[usegamma][c->g],
-	//								   gammatable[usegamma][c->b]);
-
-	//	palette += 3;
-	//}
-    
-
-    /* performance boost:
-     * map to the right pixel format over here! */
-
-    for (i=0; i<256; ++i ) {
-        colors[i].a = 0;
-        colors[i].r = gammatable[usegamma][*palette++];
-        colors[i].g = gammatable[usegamma][*palette++];
-        colors[i].b = gammatable[usegamma][*palette++];
+    //for (i=0; i<256; ++i ) {
+    //    colors[i].a = 0;
+    //    colors[i].r = gammatable[usegamma][*palette++];
+    //    colors[i].g = gammatable[usegamma][*palette++];
+    //    colors[i].b = gammatable[usegamma][*palette++];
+    //}
+    for (int i=0; i<256; ++i) {
+        uint8_t red = gammatable[usegamma][*palette++];
+        uint8_t green = gammatable[usegamma][*palette++];
+        uint8_t blue = gammatable[usegamma][*palette++];
+        palette_png[3*i + 0] = red;
+        palette_png[3*i + 1] = green;
+        palette_png[3*i + 2] = blue;
     }
 }
 
