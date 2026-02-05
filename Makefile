@@ -15,7 +15,6 @@ SDL_ROOT = libs/SDL
 SDL_MIXER_ROOT = libs/SDL-Mixer-X
 ADLMIDI_ROOT = libs/libADLMIDI
 LIBCXX_ROOT = libs/libcxx
-DLMALLOC_ROOT = libs/dlmalloc
 
 include output/config.mk
 
@@ -25,7 +24,6 @@ outfile_guest_corevm = $(outfile_guest:.elf=.corevm)
 sources = \
 		  src/impl_dummy_sdl.c \
 		  src/stb_impl.c \
-		  $(DLMALLOC_ROOT)/malloc.c \
 		  $(LIBCXX_ROOT)/src/new.cpp \
 		  $(LIBCXX_ROOT)/src/new_helpers.cpp \
 		  $(LIBCXX_ROOT)/src/new_handler.cpp \
