@@ -1,13 +1,13 @@
+CC = polkavm-cc
+CXX = polkavm-cc++
+LD = polkavm-lld
+
 TARGET_BITNESS = 64
 TARGET_ABI32 = ilp32e
 TARGET_ABI64 = lp64e
 TARGET_ABI = $(TARGET_ABI64)
 MUSL_TARGET_ARCH = riscv64
-TARGET_FLAGS = --target=riscv$(TARGET_BITNESS)-unknown-none-elf \
-			   -march=rv$(TARGET_BITNESS)emac \
-			   -mabi=${TARGET_ABI} \
-			   -nostdlib \
-			   -nodefaultlibs
+TARGET_FLAGS =
 
 MUSL_ROOT = libs/musl-1.2.4
 DOOM_ROOT = libs/doomgeneric/doomgeneric
@@ -22,7 +22,7 @@ include output/config.mk
 outfile_guest = output/doom$(DOOM_SUFFIX).elf
 outfile_guest_corevm = $(outfile_guest:.elf=.corevm)
 
-sources = src/impl_dummy_libc.c \
+sources = \
 		  src/impl_dummy_sdl.c \
 		  src/stb_impl.c \
 		  $(DLMALLOC_ROOT)/malloc.c \
@@ -69,144 +69,6 @@ sources = src/impl_dummy_libc.c \
 		  $(SDL_MIXER_ROOT)/src/utils.c \
 		  libs/miniz/miniz.c \
 		  libs/miniz/miniz_tdef.c \
-		  $(MUSL_ROOT)/src/locale/__lctrans.c \
-		  $(MUSL_ROOT)/src/locale/c_locale.c \
-		  $(MUSL_ROOT)/src/errno/__errno_location.c \
-		  $(MUSL_ROOT)/src/errno/strerror.c \
-		  $(MUSL_ROOT)/src/exit/assert.c \
-		  $(MUSL_ROOT)/src/string/strspn.c \
-		  $(MUSL_ROOT)/src/string/strcspn.c \
-		  $(MUSL_ROOT)/src/string/strlen.c \
-		  $(MUSL_ROOT)/src/string/strcasecmp.c \
-		  $(MUSL_ROOT)/src/string/strchr.c \
-		  $(MUSL_ROOT)/src/string/strchrnul.c \
-		  $(MUSL_ROOT)/src/string/strcmp.c \
-		  $(MUSL_ROOT)/src/string/strdup.c \
-		  $(MUSL_ROOT)/src/string/strncasecmp.c \
-		  $(MUSL_ROOT)/src/string/strncmp.c \
-		  $(MUSL_ROOT)/src/string/strncpy.c \
-		  $(MUSL_ROOT)/src/string/strrchr.c \
-		  $(MUSL_ROOT)/src/string/strstr.c \
-		  $(MUSL_ROOT)/src/string/strnlen.c \
-		  $(MUSL_ROOT)/src/string/strlcpy.c \
-		  $(MUSL_ROOT)/src/string/stpncpy.c \
-		  $(MUSL_ROOT)/src/string/strtok_r.c \
-		  $(MUSL_ROOT)/src/string/memset.c \
-		  $(MUSL_ROOT)/src/string/memcpy.c \
-		  $(MUSL_ROOT)/src/string/memchr.c \
-		  $(MUSL_ROOT)/src/string/memrchr.c \
-		  $(MUSL_ROOT)/src/string/memcmp.c \
-		  $(MUSL_ROOT)/src/string/memmove.c \
-		  $(MUSL_ROOT)/src/string/wcschr.c \
-		  $(MUSL_ROOT)/src/string/wcslen.c \
-		  $(MUSL_ROOT)/src/string/wcsnlen.c \
-		  $(MUSL_ROOT)/src/string/wmemchr.c \
-		  $(MUSL_ROOT)/src/string/wmemcmp.c \
-		  $(MUSL_ROOT)/src/stdio/__overflow.c \
-		  $(MUSL_ROOT)/src/stdio/__fdopen.c \
-		  $(MUSL_ROOT)/src/stdio/__toread.c \
-		  $(MUSL_ROOT)/src/stdio/__towrite.c \
-		  $(MUSL_ROOT)/src/stdio/__lockfile.c \
-		  $(MUSL_ROOT)/src/stdio/__stdio_close.c \
-		  $(MUSL_ROOT)/src/stdio/__stdio_read.c \
-		  $(MUSL_ROOT)/src/stdio/__stdio_seek.c \
-		  $(MUSL_ROOT)/src/stdio/__stdio_write.c \
-		  $(MUSL_ROOT)/src/stdio/__stdio_exit.c \
-		  $(MUSL_ROOT)/src/stdio/__stdout_write.c \
-		  $(MUSL_ROOT)/src/stdio/__fmodeflags.c \
-		  $(MUSL_ROOT)/src/stdio/__uflow.c \
-		  $(MUSL_ROOT)/src/stdio/ftrylockfile.c \
-		  $(MUSL_ROOT)/src/stdio/ofl.c \
-		  $(MUSL_ROOT)/src/stdio/ofl_add.c \
-		  $(MUSL_ROOT)/src/stdio/stderr.c \
-		  $(MUSL_ROOT)/src/stdio/stdin.c \
-		  $(MUSL_ROOT)/src/stdio/stdout.c \
-		  $(MUSL_ROOT)/src/stdio/snprintf.c \
-		  $(MUSL_ROOT)/src/stdio/vsnprintf.c \
-		  $(MUSL_ROOT)/src/stdio/vfprintf.c \
-		  $(MUSL_ROOT)/src/stdio/printf.c \
-		  $(MUSL_ROOT)/src/stdio/sscanf.c \
-		  $(MUSL_ROOT)/src/stdio/ftell.c \
-		  $(MUSL_ROOT)/src/stdio/fwrite.c \
-		  $(MUSL_ROOT)/src/stdio/fseek.c \
-		  $(MUSL_ROOT)/src/stdio/fread.c \
-		  $(MUSL_ROOT)/src/stdio/fprintf.c \
-		  $(MUSL_ROOT)/src/stdio/fopen.c \
-		  $(MUSL_ROOT)/src/stdio/fflush.c \
-		  $(MUSL_ROOT)/src/stdio/ferror.c \
-		  $(MUSL_ROOT)/src/stdio/fclose.c \
-		  $(MUSL_ROOT)/src/stdio/vsscanf.c \
-		  $(MUSL_ROOT)/src/stdio/vfscanf.c \
-		  $(MUSL_ROOT)/src/stdio/putchar.c \
-		  $(MUSL_ROOT)/src/stdio/puts.c \
-		  $(MUSL_ROOT)/src/stdio/fputs.c \
-		  $(MUSL_ROOT)/src/stdio/remove.c \
-		  $(MUSL_ROOT)/src/stdio/rename.c \
-		  $(MUSL_ROOT)/src/stdio/feof.c \
-		  $(MUSL_ROOT)/src/stdio/fgets.c \
-		  $(MUSL_ROOT)/src/stdio/fputc.c \
-		  $(MUSL_ROOT)/src/stdio/fputwc.c \
-		  $(MUSL_ROOT)/src/stdio/fwide.c \
-		  $(MUSL_ROOT)/src/stdio/swprintf.c \
-		  $(MUSL_ROOT)/src/stdio/vfwprintf.c \
-		  $(MUSL_ROOT)/src/stdio/vswprintf.c \
-		  $(MUSL_ROOT)/src/stdlib/abs.c \
-		  $(MUSL_ROOT)/src/stdlib/atoi.c \
-		  $(MUSL_ROOT)/src/stdlib/atof.c \
-		  $(MUSL_ROOT)/src/stdlib/strtod.c \
-		  $(MUSL_ROOT)/src/stdlib/strtol.c \
-		  $(MUSL_ROOT)/src/stdlib/wcstod.c \
-		  $(MUSL_ROOT)/src/stdlib/wcstol.c \
-		  $(MUSL_ROOT)/src/stat/mkdir.c \
-		  $(MUSL_ROOT)/src/ctype/islower.c \
-		  $(MUSL_ROOT)/src/ctype/isupper.c \
-		  $(MUSL_ROOT)/src/ctype/isdigit.c \
-		  $(MUSL_ROOT)/src/ctype/toupper.c \
-		  $(MUSL_ROOT)/src/ctype/tolower.c \
-		  $(MUSL_ROOT)/src/ctype/iswspace.c \
-		  $(MUSL_ROOT)/src/math/__fpclassifyl.c \
-		  $(MUSL_ROOT)/src/math/__signbitl.c \
-		  $(MUSL_ROOT)/src/math/frexpl.c \
-		  $(MUSL_ROOT)/src/math/fmodl.c \
-		  $(MUSL_ROOT)/src/math/scalbn.c \
-		  $(MUSL_ROOT)/src/math/scalbnl.c \
-		  $(MUSL_ROOT)/src/math/copysignl.c \
-		  $(MUSL_ROOT)/src/math/sin.c \
-		  $(MUSL_ROOT)/src/math/ceil.c \
-		  $(MUSL_ROOT)/src/math/floor.c \
-		  $(MUSL_ROOT)/src/math/floorf.c \
-		  $(MUSL_ROOT)/src/math/exp.c \
-		  $(MUSL_ROOT)/src/math/exp2.c \
-		  $(MUSL_ROOT)/src/math/log.c \
-		  $(MUSL_ROOT)/src/math/sqrt.c \
-		  $(MUSL_ROOT)/src/math/round.c \
-		  $(MUSL_ROOT)/src/math/sqrt_data.c \
-		  $(MUSL_ROOT)/src/math/exp_data.c \
-		  $(MUSL_ROOT)/src/math/log_data.c \
-		  $(MUSL_ROOT)/src/math/__cos.c \
-		  $(MUSL_ROOT)/src/math/__sin.c \
-		  $(MUSL_ROOT)/src/math/__math_divzero.c \
-		  $(MUSL_ROOT)/src/math/__math_invalid.c \
-		  $(MUSL_ROOT)/src/math/__math_uflow.c \
-		  $(MUSL_ROOT)/src/math/__math_oflow.c \
-		  $(MUSL_ROOT)/src/math/__math_xflow.c \
-		  $(MUSL_ROOT)/src/math/__rem_pio2.c \
-		  $(MUSL_ROOT)/src/math/__rem_pio2_large.c \
-		  $(MUSL_ROOT)/src/multibyte/mbsinit.c \
-		  $(MUSL_ROOT)/src/multibyte/mbrtowc.c \
-		  $(MUSL_ROOT)/src/multibyte/wctomb.c \
-		  $(MUSL_ROOT)/src/multibyte/wcrtomb.c \
-		  $(MUSL_ROOT)/src/multibyte/internal.c \
-		  $(MUSL_ROOT)/src/multibyte/btowc.c \
-		  $(MUSL_ROOT)/src/multibyte/mbtowc.c \
-		  $(MUSL_ROOT)/src/unistd/lseek.c \
-		  $(MUSL_ROOT)/src/unistd/close.c \
-		  $(MUSL_ROOT)/src/thread/__lock.c \
-		  $(MUSL_ROOT)/src/internal/shgetc.c \
-		  $(MUSL_ROOT)/src/internal/floatscan.c \
-		  $(MUSL_ROOT)/src/internal/intscan.c \
-		  $(MUSL_ROOT)/src/internal/libc.c \
-		  $(MUSL_ROOT)/src/internal/syscall_ret.c \
 		  $(DOOM_ROOT)/i_sdlsound.c \
 		  $(DOOM_ROOT)/i_sdlmusic.c \
 		  $(DOOM_ROOT)/dummy.c \
@@ -296,9 +158,6 @@ sources_guest = src/guest.c $(sources)
 tmp_guest = $(sources_guest:.c=.o)
 objects_guest = $(tmp_guest:.cpp=.o)
 
-CC = clang
-CXX = clang++
-LD = clang
 # preprocessor flags
 CPPFLAGS = -Ioutput \
 		   -Isrc/include \
@@ -359,7 +218,10 @@ CFLAGS = $(TARGET_FLAGS) \
 		 -Wno-visibility \
 		 -Wno-absolute-value \
 		 -Wno-pointer-sign \
-		 -Wno-string-plus-int
+		 -Wno-string-plus-int \
+		 -DUSE_DL_PREFIX
+
+# -Os -Werror=date-time -Wno-dangling-else -Wno-trigraphs -Wno-unused-value -Wno-pointer-to-int-cast -Wno-pointer-sign -flto -ferror-limit=0 -ggdb
 CXXFLAGS = $(CFLAGS) \
 		   -fno-exceptions \
 		   -fno-rtti
@@ -369,13 +231,21 @@ CXXFLAGS = $(CFLAGS) \
 all: $(outfile_guest_corevm)
 
 $(outfile_guest_corevm): $(outfile_guest)
-	polkatool link -s $< -o $@
+	polkatool link -s $< -o $@.tmp
+	jam-blob set-meta \
+		--name PolkaDoom \
+		--version 0.1 \
+		--license GPLv2 \
+		--author 'Parity Technologies <admin@parity.io>' \
+		$@.tmp
+	mv $@.tmp $@
+
 
 $(outfile_guest): $(objects_guest) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
 	$(CC) $(LDFLAGS) $+ -o $@
 
 libs/doomgeneric/doomgeneric/i_video.o: src/corevm_guest.h src/polkavm_guest.h
-src/guest.o: src/corevm_guest.h src/polkavm_guest.h output/config.h
+src/guest.o: src/corevm_guest.h src/polkavm_guest.h
 
 output/doom1_wad.c: roms/doom1.wad
 	xxd -i $< >$@
