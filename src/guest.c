@@ -11,8 +11,8 @@
 #include <sys/syscall.h>
 #include <SDL.h>
 
-#include "polkavm_guest.h"
-#include "corevm_guest.h"
+#include <polkavm_guest.h>
+#include <corevm_guest.h>
 #include "../libs/doomgeneric/doomgeneric/doomgeneric.h"
 #include "../libs/doomgeneric/doomgeneric/i_timer.h"
 #include "../libs/SDL/src/audio/SDL_audio_c.h"

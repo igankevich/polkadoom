@@ -46,9 +46,9 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include <stdarg.h>
 
 #include <sys/types.h>
+#include <corevm_guest.h>
 
 #include "miniz.h"
-#include "corevm_guest.h"
 #include "stb_image_write.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))

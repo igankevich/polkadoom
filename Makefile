@@ -9,7 +9,6 @@ TARGET_ABI = $(TARGET_ABI64)
 MUSL_TARGET_ARCH = riscv64
 TARGET_FLAGS =
 
-MUSL_ROOT = libs/musl-1.2.4
 DOOM_ROOT = libs/doomgeneric/doomgeneric
 SDL_ROOT = libs/SDL
 SDL_MIXER_ROOT = libs/SDL-Mixer-X
@@ -165,12 +164,6 @@ CPPFLAGS = -Ioutput \
 		   -I$(SDL_MIXER_ROOT)/src/codecs \
 		   -I$(ADLMIDI_ROOT)/include \
 		   -I$(LIBCXX_ROOT)/include \
-		   -I$(MUSL_ROOT)/src/include \
-		   -I$(MUSL_ROOT)/include \
-		   -I$(MUSL_ROOT)/src/internal \
-		   -I$(MUSL_ROOT)/src/multibyte \
-		   -I$(MUSL_ROOT)/arch/generic \
-		   -I$(MUSL_ROOT)/arch/$(MUSL_TARGET_ARCH) \
 		   -Isrc \
 		   -DHAVE_STDIO_H \
 		   -DHAVE_O_CLOEXEC \
@@ -241,9 +234,6 @@ $(outfile_guest_corevm): $(outfile_guest)
 
 $(outfile_guest): $(objects_guest) libclang_rt.builtins-riscv$(TARGET_BITNESS).a
 	$(CC) $(LDFLAGS) $+ -o $@
-
-libs/doomgeneric/doomgeneric/i_video.o: src/corevm_guest.h src/polkavm_guest.h
-src/guest.o: src/corevm_guest.h src/polkavm_guest.h
 
 output/doom1_wad.c: roms/doom1.wad
 	xxd -i $< >$@
