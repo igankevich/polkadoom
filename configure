@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+case "$1" in
+--no-audio)
+	printf "Audio: disabled\n" >&2
+    mkdir -p output
+	cat >output/config.mk <<'EOF'
+DOOM_SUFFIX =
+EOF
+	cat >output/config.h <<'EOF'
+#define DOOM_NO_AUDIO
+EOF
+	;;
+-h|--help)
+    cat <<EOF
+usage: $0 [--no-audio]
+EOF
+    ;;
+*)
+	printf "Audio: enabled\n" >&2
+    mkdir -p output
+	cat >output/config.mk <<'EOF'
+DOOM_SUFFIX = -with-audio
+EOF
+	cat >output/config.h <<'EOF'
+/* #define DOOM_NO_AUDIO */
+EOF
+	;;
+esac
