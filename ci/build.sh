@@ -35,6 +35,7 @@ polkaports_install() {
 		OBJDUMP=llvm-objdump-19 \
 		RANLIB=llvm-ranlib-19 \
 		./setup.sh
+	suffix=corevm
 	. ./activate.sh corevm
 }
 
