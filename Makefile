@@ -1,5 +1,5 @@
 CC = polkavm-cc
-CXX = polkavm-cc++
+CXX = polkavm-c++
 LD = polkavm-lld
 
 TARGET_BITNESS = 64
