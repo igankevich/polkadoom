@@ -5,7 +5,7 @@ main() {
 	workdir="$(mktemp -d)"
 	trap cleanup EXIT
 	root="$PWD"
-	polkaports_install
+	polkaports_install corevm
 	doom_build
 }
 
@@ -35,7 +35,6 @@ polkaports_install() {
 		OBJDUMP=llvm-objdump-19 \
 		RANLIB=llvm-ranlib-19 \
 		./setup.sh
-	suffix=corevm
 	. ./activate.sh corevm
 }
 
