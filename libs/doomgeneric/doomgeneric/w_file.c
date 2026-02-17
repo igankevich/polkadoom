@@ -25,12 +25,12 @@
 
 #include "w_file.h"
 
-extern wad_file_class_t static_wad_file;
+extern wad_file_class_t stdc_wad_file;
 
 wad_file_t *W_OpenFile(char *path)
 {
-    fprintf(stderr, "Open file %s\n", path);
-    return static_wad_file.OpenFile(path);
+    //fprintf(stderr, "Open file %s\n", path);
+    return stdc_wad_file.OpenFile(path);
 }
 
 void W_CloseFile(wad_file_t *wad)
