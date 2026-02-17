@@ -4,6 +4,7 @@ SDL_MIXER_ROOT = libs/SDL-Mixer-X
 ADLMIDI_ROOT = libs/libADLMIDI
 LIBCXX_ROOT = libs/libcxx
 MIN_STACK_SIZE = 1048576
+VERSION = 0.1.0
 
 include output/config.mk
 
@@ -195,7 +196,7 @@ $(outfile_guest_corevm): $(outfile_guest)
 	polkatool link -s $< -o $@.tmp --min-stack-size $(MIN_STACK_SIZE)
 	jam-blob set-meta \
 		--name PolkaDoom \
-		--version 0.1 \
+		--version $(VERSION) \
 		--license GPLv2 \
 		--author 'Parity Technologies <admin@parity.io>' \
 		$@.tmp
