@@ -12,7 +12,7 @@ jobs:
       - name: Build CoreVM binaries
         run: ./ci/build.sh
       - name: Create release
-        #  if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag'
         uses: actions/create-release@v1
         id: create_release
         env:
@@ -23,7 +23,7 @@ jobs:
           draft: false
           prerelease: false
       - name: Upload doom.corevm
-        #  if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,7 +33,7 @@ jobs:
           asset_name: doom.corevm
           asset_content_type: application/octet-stream
       - name: Upload doom-with-audio.corevm
-        #  if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
