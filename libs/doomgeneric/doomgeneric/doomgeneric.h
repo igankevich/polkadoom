@@ -6,14 +6,12 @@
 
 #define DOOMGENERIC_RESX 320
 #define DOOMGENERIC_RESY 200
-#define FRAME_LEN (DOOMGENERIC_RESX*DOOMGENERIC_RESY)
+#define FRAME_LEN (DOOMGENERIC_RESX * DOOMGENERIC_RESY)
 #define PALETTE_PNG_LEN (256*3)
-#define PAYLOAD_LEN (1 + PALETTE_PNG_LEN + FRAME_LEN)
-#define COMPRESSOR_BUF_LEN (10 * DOOMGENERIC_RESX * DOOMGENERIC_RESY)
+#define PAYLOAD_LEN ((PALETTE_PNG_LEN) + (FRAME_LEN))
 
 
 extern uint8_t* DG_ScreenBuffer;
-extern uint8_t* CompressedScreenBuffer;
 extern int num_frames_written;
 
 void doomgeneric_Create(int argc, char **argv);

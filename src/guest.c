@@ -36,7 +36,11 @@ int main() {
         .width = DOOMGENERIC_RESX,
         .height = DOOMGENERIC_RESY,
         .refresh_rate = FRAMES_PER_SEC,
-        .format = COREVM_VIDEO_RGB88_INDEXED8,
+        #if defined(DOOM_NO_AUDIO)
+        .options = COREVM_VIDEO_MODE_RAW,
+        #else
+        .options = COREVM_VIDEO_MODE_QUANTIZATION_LEVEL(4) | COREVM_VIDEO_MODE_CHROMA_SUBSAMPLING,
+        #endif
     };
     corevm_video_mode(&video_mode);
     #if !defined(DOOM_NO_AUDIO)
@@ -53,8 +57,6 @@ int main() {
     }
     return 0;
 }
-
-POLKAVM_EXPORT(int, main);
 
 static inline size_t next_power_of_2(size_t x) {
     size_t n = 1;
