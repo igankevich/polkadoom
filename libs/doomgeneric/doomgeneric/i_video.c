@@ -124,14 +124,12 @@ static uint16_t rgb565_palette[256];
 
 static void cmap_to_fb_copy(uint8_t* out, uint8_t* in) {
     uint8_t* ptr = out;
-    // Copy the palette flag.
-    *ptr++ = 1;
     // Copy the palette.
     memcpy(ptr, palette_png, PALETTE_PNG_LEN);
     ptr += PALETTE_PNG_LEN;
     // Copy the frame.
     memcpy(ptr, in, FRAME_LEN);
-    corevm_yield_video_frame((uint64_t) out, (uint64_t) PAYLOAD_LEN);
+    corevm_yield_video_frame((uint64_t) out, (uint64_t) PAYLOAD_LEN, COREVM_VIDEO_RGB88_INDEXED8);
 }
 
 void I_InitGraphics (void)

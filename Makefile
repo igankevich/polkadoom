@@ -3,7 +3,7 @@ SDL_ROOT = libs/SDL
 SDL_MIXER_ROOT = libs/SDL-Mixer-X
 ADLMIDI_ROOT = libs/libADLMIDI
 MIN_STACK_SIZE = 1048576
-VERSION = 0.1.1
+VERSION = 0.1.2
 
 include output/config.mk
 
